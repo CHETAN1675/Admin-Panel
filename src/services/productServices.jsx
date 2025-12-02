@@ -31,3 +31,19 @@ export async function addProduct(product, token) {
     return { success: false, message: "Network error" };
   }
 }
+
+
+export async function updateProduct(id, updates, token) {
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/products/${id}.json?auth=${token}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+
+    if (!res.ok) return { success: false, message: "Failed to update product" };
+    return { success: true };
+  } catch {
+    return { success: false, message: "Network error" };
+  }
+}

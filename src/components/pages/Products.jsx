@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
 import { Table, Button, Modal, Form } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
-import { getAllProducts, addProduct } from "../../services/productServices";
+import { getAllProducts, addProduct, updateProduct } from "../../services/productServices";
 
 export default function Products() {
   const { token } = useAuth();
   const [products, setProducts] = useState([]);
   const [show, setShow] = useState(false);
-  const [form, setForm] = useState({ title: "", price: "", image: "" });
+  const [editingId, setEditingId] = useState(null);
+
+  const [form, setForm] = useState({
+    title: "",
+    price: "",
+    image: "",
+    category: ""
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -22,12 +29,37 @@ export default function Products() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const openAddModal = () => {
+    setEditingId(null);
+    setForm({ title: "", price: "", image: "", category: "" });
+    setShow(true);
+  };
+
+  const openEditModal = (product) => {
+    setEditingId(product.id);
+    setForm({
+      title: product.title,
+      price: product.price,
+      image: product.image,
+      category: product.category
+    });
+    setShow(true);
+  };
+
   const handleSubmit = async () => {
-    const res = await addProduct(form, token);
+    let res;
+
+    if (editingId) {
+      res = await updateProduct(editingId, form, token);
+    } else {
+      res = await addProduct(form, token);
+    }
+
     if (res.success) {
       setShow(false);
       fetchProducts();
-      setForm({ title: "", price: "", image: "" });
+      setForm({ title: "", price: "", image: "", category: "" });
+      setEditingId(null);
     } else {
       alert(res.message);
     }
@@ -37,7 +69,7 @@ export default function Products() {
     <>
       <div className="d-flex justify-content-between mb-3">
         <h3>Products</h3>
-        <Button onClick={() => setShow(true)}>Add Product</Button>
+        <Button onClick={openAddModal}>Add Product</Button>
       </div>
 
       <Table bordered hover>
@@ -45,7 +77,9 @@ export default function Products() {
           <tr>
             <th>Title</th>
             <th>Price ($)</th>
+            <th>Category</th>
             <th>Image</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -53,15 +87,27 @@ export default function Products() {
             <tr key={p.id}>
               <td>{p.title}</td>
               <td>{p.price}</td>
-              <td><img src={p.image} width={60} /></td>
+              <td>{p.category}</td>
+              <td>
+                <img src={p.image} width={60} alt="" />
+              </td>
+              <td>
+                <Button size="sm" variant="primary" onClick={() => openEditModal(p)}>
+                  Edit
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </Table>
 
-      {/* Add Product Modal */}
+      {/* Add / Edit Product Modal */}
+      
       <Modal show={show} onHide={() => setShow(false)}>
-        <Modal.Header closeButton><Modal.Title>Add Product</Modal.Title></Modal.Header>
+        <Modal.Header closeButton>
+          <Modal.Title>{editingId ? "Edit Product" : "Add Product"}</Modal.Title>
+        </Modal.Header>
+
         <Modal.Body>
           <Form>
             <Form.Group className="mb-2">
@@ -71,7 +117,17 @@ export default function Products() {
 
             <Form.Group className="mb-2">
               <Form.Label>Price</Form.Label>
-              <Form.Control name="price" type="number" value={form.price} onChange={handleChange} />
+              <Form.Control
+                name="price"
+                type="number"
+                value={form.price}
+                onChange={handleChange}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Category</Form.Label>
+              <Form.Control name="category" value={form.category} onChange={handleChange} />
             </Form.Group>
 
             <Form.Group className="mb-2">
@@ -83,7 +139,9 @@ export default function Products() {
 
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShow(false)}>Cancel</Button>
-          <Button onClick={handleSubmit}>Save</Button>
+          <Button onClick={handleSubmit}>
+            {editingId ? "Update" : "Save"}
+          </Button>
         </Modal.Footer>
       </Modal>
     </>
