@@ -1,80 +1,91 @@
-import { useEffect, useState } from "react";
-import { Table, Spinner, Alert } from "react-bootstrap";
-import { getAllProducts } from "../../services/productServices";
+import { useState, useEffect } from "react";
+import { Table, Button, Modal, Form } from "react-bootstrap";
+import { useAuth } from "../../contexts/AuthContext";
+import { getAllProducts, addProduct } from "../../services/productServices";
 
 export default function Products() {
+  const { token } = useAuth();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({ title: "", price: "", image: "" });
 
   useEffect(() => {
-    loadProducts();
+    fetchProducts();
   }, []);
 
-  const loadProducts = async () => {
-    setLoading(true);
-    setError("");
+  const fetchProducts = async () => {
+    const list = await getAllProducts();
+    setProducts(list);
+  };
 
-    const res = await getAllProducts();
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-    if (res.error) {
-      setError("Failed to fetch products");
+  const handleSubmit = async () => {
+    const res = await addProduct(form, token);
+    if (res.success) {
+      setShow(false);
+      fetchProducts();
+      setForm({ title: "", price: "", image: "" });
     } else {
-      setProducts(res);
+      alert(res.message);
     }
-
-    setLoading(false);
   };
 
   return (
     <>
-      <h3 className="mb-3">Products</h3>
+      <div className="d-flex justify-content-between mb-3">
+        <h3>Products</h3>
+        <Button onClick={() => setShow(true)}>Add Product</Button>
+      </div>
 
-      {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? (
-        <div className="text-center">
-          <Spinner animation="border" />
-        </div>
-      ) : (
-        <Table striped borderless hover>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Preview</th>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Price</th>
+      <Table bordered hover>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Price ($)</th>
+            <th>Image</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map(p => (
+            <tr key={p.id}>
+              <td>{p.title}</td>
+              <td>{p.price}</td>
+              <td><img src={p.image} width={60} /></td>
             </tr>
-          </thead>
-          <tbody>
-            {products.length > 0 ? (
-              products.map((p, index) => (
-                <tr key={p.id}>
-                  <td>{index + 1}</td>
-                  <td>
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      width={45}
-                      height={45}
-                      style={{ objectFit: "cover", borderRadius: 4 }}
-                    />
-                  </td>
-                  <td>{p.name}</td>
-                  <td>{p.category}</td>
-                  <td>${p.price}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center">
-                  No products found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      )}
+          ))}
+        </tbody>
+      </Table>
+
+      {/* Add Product Modal */}
+      <Modal show={show} onHide={() => setShow(false)}>
+        <Modal.Header closeButton><Modal.Title>Add Product</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>Title</Form.Label>
+              <Form.Control name="title" value={form.title} onChange={handleChange} />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Price</Form.Label>
+              <Form.Control name="price" type="number" value={form.price} onChange={handleChange} />
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Image URL</Form.Label>
+              <Form.Control name="image" value={form.image} onChange={handleChange} />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShow(false)}>Cancel</Button>
+          <Button onClick={handleSubmit}>Save</Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }

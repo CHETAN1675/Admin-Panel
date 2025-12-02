@@ -1,8 +1,8 @@
-const FIREBASE_DB = "https://buyite-comm-default-rtdb.firebaseio.com";
+import { FIREBASE_DB_URL } from "../firebase";
 
 export async function getAllProducts() {
   try {
-    const res = await fetch(`${FIREBASE_DB}/products.json`);
+    const res = await fetch(`${FIREBASE_DB_URL}/products.json`);
     const data = await res.json();
 
     if (!data) return [];
@@ -12,6 +12,22 @@ export async function getAllProducts() {
       ...data[id],
     }));
   } catch {
-    return { error: true };
+    return [];
+  }
+}
+
+
+export async function addProduct(product, token) {
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/products.json?auth=${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product),
+    });
+
+    if (!res.ok) return { success: false, message: "Failed to add product" };
+    return { success: true };
+  } catch {
+    return { success: false, message: "Network error" };
   }
 }
