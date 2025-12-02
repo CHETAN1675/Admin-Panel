@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { signInWithEmailPassword, getUserRecord } from "../services/authServices";
+import { createContext, useContext, useState } from "react";
+import {signInWithEmailPassword,signUpWithEmailPassword,getUserRecord} from "../services/authServices";
+import { FIREBASE_DB_URL } from "../firebase";
 
 const AuthContext = createContext(null);
 
@@ -11,35 +12,27 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+
   const [token, setToken] = useState(() => localStorage.getItem("adminToken") || null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    
-  }, []);
-
+  // LOGIN
   const login = async (email, password) => {
     setLoading(true);
     try {
       const res = await signInWithEmailPassword(email, password);
-      if (res.error || res.errorMessage) {
-        throw res;
-      }
+      if (res.error || res.errorMessage) throw res;
 
       const { localId, idToken } = res;
-     
       const record = await getUserRecord(localId);
 
-      if (!record || !record.isAdmin) {
-       
-        throw { message: "Not an admin user" };
-      }
+      if (!record || !record.isAdmin) throw { message: "Not an admin user" };
 
       const adminUser = {
         email: res.email,
         uid: localId,
-        isAdmin: !!record.isAdmin,
-        name: record.name || null,
+        isAdmin: true,
+        name: record.name || res.email.split("@")[0]
       };
 
       localStorage.setItem("adminUser", JSON.stringify(adminUser));
@@ -47,13 +40,54 @@ export function AuthProvider({ children }) {
 
       setUser(adminUser);
       setToken(idToken);
-
       setLoading(false);
       return { success: true, user: adminUser };
     } catch (err) {
       setLoading(false);
-    
-      const message = (err && (err.error?.message || err.message || err.errorMessage)) || "Login failed";
+      const message =
+        err?.error?.message || err?.message || err?.errorMessage || "Login failed";
+      return { success: false, message };
+    }
+  };
+
+  // SIGNUP — CREATE ADMIN ACCOUNT
+  const signup = async (email, password) => {
+    setLoading(true);
+    try {
+      const res = await signUpWithEmailPassword(email, password);
+      if (res.error || res.errorMessage) throw res;
+
+      const { localId, idToken } = res;
+
+      // Save admin profile in database
+      await fetch(`${FIREBASE_DB_URL}/users/${localId}.json`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          email,
+          name: email.split("@")[0],
+          isAdmin: true
+        }),
+        headers: { "Content-Type": "application/json" }
+      });
+
+      const adminUser = {
+        email,
+        uid: localId,
+        isAdmin: true,
+        name: email.split("@")[0]
+      };
+
+      localStorage.setItem("adminUser", JSON.stringify(adminUser));
+      localStorage.setItem("adminToken", idToken);
+
+      setUser(adminUser);
+      setToken(idToken);
+      setLoading(false);
+      return { success: true, user: adminUser };
+    } catch (err) {
+      setLoading(false);
+      const message =
+        err?.error?.message || err?.message || err?.errorMessage || "Signup failed";
       return { success: false, message };
     }
   };
@@ -66,7 +100,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
