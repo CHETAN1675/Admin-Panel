@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Table, Button, Modal, Form } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
-import { getAllProducts, addProduct, updateProduct } from "../../services/productServices";
+import { getAllProducts, addProduct, updateProduct, deleteProduct } from "../../services/productServices";
 
 export default function Products() {
   const { token } = useAuth();
@@ -48,7 +48,6 @@ export default function Products() {
 
   const handleSubmit = async () => {
     let res;
-
     if (editingId) {
       res = await updateProduct(editingId, form, token);
     } else {
@@ -62,6 +61,16 @@ export default function Products() {
       setEditingId(null);
     } else {
       alert(res.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    const res = await deleteProduct(id, token);
+    if (res.success) {
+      fetchProducts();
+    } else {
+      alert("Failed to delete product");
     }
   };
 
@@ -88,12 +97,13 @@ export default function Products() {
               <td>{p.title}</td>
               <td>{p.price}</td>
               <td>{p.category}</td>
-              <td>
-                <img src={p.image} width={60} alt="" />
-              </td>
-              <td>
+              <td><img src={p.image} width={60} alt="" /></td>
+              <td className="d-flex gap-2">
                 <Button size="sm" variant="primary" onClick={() => openEditModal(p)}>
                   Edit
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => handleDelete(p.id)}>
+                  Delete
                 </Button>
               </td>
             </tr>
@@ -101,8 +111,6 @@ export default function Products() {
         </tbody>
       </Table>
 
-      {/* Add / Edit Product Modal */}
-      
       <Modal show={show} onHide={() => setShow(false)}>
         <Modal.Header closeButton>
           <Modal.Title>{editingId ? "Edit Product" : "Add Product"}</Modal.Title>
@@ -117,12 +125,7 @@ export default function Products() {
 
             <Form.Group className="mb-2">
               <Form.Label>Price</Form.Label>
-              <Form.Control
-                name="price"
-                type="number"
-                value={form.price}
-                onChange={handleChange}
-              />
+              <Form.Control type="number" name="price" value={form.price} onChange={handleChange} />
             </Form.Group>
 
             <Form.Group className="mb-2">
@@ -139,9 +142,7 @@ export default function Products() {
 
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShow(false)}>Cancel</Button>
-          <Button onClick={handleSubmit}>
-            {editingId ? "Update" : "Save"}
-          </Button>
+          <Button onClick={handleSubmit}>{editingId ? "Update" : "Save"}</Button>
         </Modal.Footer>
       </Modal>
     </>

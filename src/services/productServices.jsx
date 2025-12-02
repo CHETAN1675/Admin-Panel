@@ -47,3 +47,15 @@ export async function updateProduct(id, updates, token) {
     return { success: false, message: "Network error" };
   }
 }
+
+
+export async function deleteProduct(id, token) {
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/products/${id}.json?auth=${token}`, {
+      method: "DELETE",
+    });
+    return res.ok ? { success: true } : { success: false };
+  } catch {
+    return { success: false };
+  }
+}
