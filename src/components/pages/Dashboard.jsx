@@ -1,29 +1,33 @@
 import { Card, Row, Col } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Dashboard() {
+  const { user } = useAuth();
+
   return (
     <>
-      <h3>Dashboard</h3>
-      <Row className="g-3">
+      <h3 className="mb-3">Dashboard</h3>
+      <p className="text-muted">
+        Welcome back {user?.name || user?.email}
+      </p>
+
+      <Row className="g-3 mt-2">
         <Col md={4}>
-          <Card className="p-3">
-            <h5>Products</h5>
-            <p>Manage your product catalog</p>
-            <Link to="/admin/products">Go to Products</Link>
+          <Card className="p-3 shadow-sm">
+            <h6>Total Products</h6>
+            <h2 className="fw-bold mt-2">0</h2>
           </Card>
         </Col>
         <Col md={4}>
-          <Card className="p-3">
-            <h5>Orders</h5>
-            <p>View customer orders</p>
-            <Link to="/admin/orders">Go to Orders</Link>
+          <Card className="p-3 shadow-sm">
+            <h6>Total Orders</h6>
+            <h2 className="fw-bold mt-2">0</h2>
           </Card>
         </Col>
         <Col md={4}>
-          <Card className="p-3">
-            <h5>Settings</h5>
-            <p>Admin settings and users</p>
+          <Card className="p-3 shadow-sm">
+            <h6>Total Users</h6>
+            <h2 className="fw-bold mt-2">0</h2>
           </Card>
         </Col>
       </Row>
