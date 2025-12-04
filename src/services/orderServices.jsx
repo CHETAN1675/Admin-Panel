@@ -5,32 +5,31 @@ export async function getAllOrders() {
     const res = await fetch(`${FIREBASE_DB_URL}/orders.json`);
     const data = await res.json();
 
-    console.log("RAW ADMIN ORDERS:", data);
-
     if (!data) return [];
 
     const allOrders = [];
 
-    // Loop through each user
     Object.entries(data).forEach(([uid, userOrders]) => {
-      // Loop through each order of the user
       Object.entries(userOrders).forEach(([orderId, order]) => {
         allOrders.push({
           id: orderId,
           uid,
-          ...order,
+          name: order.name || "Unknown",      // add customer name if saved
+          email: order.email || "Unknown",    // add customer email if saved
           items: order.items || [],
+          totalAmount: order.total || 0,      // rename total → totalAmount
+          status: order.status || "Pending",
+          date: order.createdAt || "Unknown"
         });
       });
     });
 
     return allOrders;
-
-  } catch (err) {
-    console.error("ADMIN ORDER FETCH ERROR:", err);
+  } catch {
     return [];
   }
 }
+
 
 
 export async function updateOrderStatus(uid, orderId, status) {
