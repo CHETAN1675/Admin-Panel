@@ -75,13 +75,33 @@ export default function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    if (!window.confirm("Delete this product?")) return;
     const res = await deleteProduct(id, token);
     if (res.success) fetchProducts();
     else alert("Failed to delete product");
   };
 
-  // 🔍 search + category filter logic
+  //  Delete entire category function
+  const deleteCategory = async () => {
+    if (categoryFilter === "all") {
+      alert("Select a specific category first.");
+      return;
+    }
+
+    if (!window.confirm(`Delete ALL products in "${categoryFilter}" category?`)) return;
+
+    const selected = products.filter(p => p.category === categoryFilter);
+
+    for (let product of selected) {
+      await deleteProduct(product.id, token);
+    }
+
+    alert(`All products in "${categoryFilter}" have been deleted.`);
+    setCategoryFilter("all");
+    fetchProducts();
+  };
+
+  // search + category filtering feature 
   const filtered = products.filter(
     (p) =>
       (categoryFilter === "all" || p.category === categoryFilter) &&
@@ -90,13 +110,12 @@ export default function Products() {
 
   return (
     <>
-      
-        <h3>Products</h3>
-        <div className="text-center mb-3">
+      <h3>Products</h3>
+
+      <div className="text-center mb-3">
         <Button onClick={openAddModal}>Add Product</Button>
       </div>
 
-    
       <Row className="mb-3">
         <Col md={6}>
           <Form.Control
@@ -112,14 +131,23 @@ export default function Products() {
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
             <option value="all">All Categories</option>
-            {[...new Set(products.map((p) => p.category).filter(Boolean))].map(
-              (cat) => (
-                <option key={cat} value={cat}>
-                  {String(cat).charAt(0).toUpperCase() + String(cat).slice(1)}
-                </option>
-              )
-            )}
+            {[...new Set(products.map(p => p.category).filter(Boolean))].map((cat) => (
+              <option key={cat} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </option>
+            ))}
           </Form.Select>
+        </Col>
+
+        <Col md={3}>
+          <Button
+            variant="danger"
+            className="w-100"
+            disabled={categoryFilter === "all"}
+            onClick={deleteCategory}
+          >
+            Delete Category
+          </Button>
         </Col>
       </Row>
 
@@ -139,7 +167,13 @@ export default function Products() {
           {filtered.map((p) => (
             <tr key={p.id}>
               <td>
-                <img src={p.image} width={55} height={55} style={{ objectFit: "contain" }} alt="" />
+                <img
+                  src={p.image}
+                  width={55}
+                  height={55}
+                  alt=""
+                  style={{ objectFit: "contain" }}
+                />
               </td>
               <td>{p.title}</td>
               <td style={{ maxWidth: "280px" }}>
@@ -177,12 +211,7 @@ export default function Products() {
 
             <Form.Group className="mb-2">
               <Form.Label>Price</Form.Label>
-              <Form.Control
-                type="number"
-                name="price"
-                value={form.price}
-                onChange={handleChange}
-              />
+              <Form.Control type="number" name="price" value={form.price} onChange={handleChange} />
             </Form.Group>
 
             <Form.Group className="mb-2">

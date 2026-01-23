@@ -32,15 +32,21 @@ export async function getAllOrders() {
 
 
 
+// Update order status
 export async function updateOrderStatus(uid, orderId, status) {
-  const res = await fetch(
-    `${FIREBASE_DB_URL}/orders/${uid}/${orderId}.json`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    }
-  );
-
-  return res.json();
+  try {
+    const res = await fetch(
+      `${FIREBASE_DB_URL}/orders/${uid}/${orderId}.json`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      }
+    );
+    if (!res.ok) throw new Error("Failed to update order");
+    return res.json();
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    return { success: false, message: error.message };
+  }
 }

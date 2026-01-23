@@ -1,49 +1,6 @@
 import { FIREBASE_DB_URL } from "../firebase";
 
-// Get all orders
-export async function getAllOrders() {
-  try {
-    const res = await fetch(`${FIREBASE_DB_URL}/orders.json`);
-    const data = await res.json();
 
-    if (!data) return [];
-    
-    return Object.entries(data).flatMap(([uid, userOrders]) =>
-      Object.entries(userOrders).map(([orderId, order]) => ({
-        id: orderId,
-        uid,
-        name: order.name || "Unknown",
-        email: order.email || "Unknown",
-        items: order.items || [],
-        totalAmount: order.total || 0,
-        status: order.status || "Pending",
-        date: order.createdAt || "Unknown",
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    return [];
-  }
-}
-
-// Update order status
-export async function updateOrderStatus(uid, orderId, status) {
-  try {
-    const res = await fetch(
-      `${FIREBASE_DB_URL}/orders/${uid}/${orderId}.json`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      }
-    );
-    if (!res.ok) throw new Error("Failed to update order");
-    return res.json();
-  } catch (error) {
-    console.error("Error updating order status:", error);
-    return { success: false, message: error.message };
-  }
-}
 
 // Get all products
 export async function getAllProducts() {

@@ -1,7 +1,8 @@
 import { Card, Row, Col, Spinner, Alert } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { useEffect, useState } from "react";
-import { getAllProducts, getAllOrders, getAllUsers } from "../../services/productServices";
+import { getAllProducts, getAllUsers } from "../../services/productServices";
+import { getAllOrders } from "../../services/orderServices";
 
 export default function Dashboard() {
   const { user } = useAuth();
